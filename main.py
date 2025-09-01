@@ -1,3 +1,8 @@
+from fastapi import FastAPI 
+
+app = FastAPI(title="livro de receitas")
+
+
 receitas = [
     {
         'nome': 'brownie',
