@@ -3,7 +3,8 @@ from fastapi import FastAPI
 app = FastAPI(title="livro de receitas")
 
 
-receitas = [
+'''
+   receitas = [
     {
         'nome': 'brownie',
         'ingredientes': [
@@ -83,6 +84,8 @@ receitas = [
 
 ]
 
+'''
+
 @app.get("/")
 def hello():
     return {"title": "Livro de Receitas"}
@@ -93,3 +96,42 @@ def get_receita(nome_receita: str):
         if i["nome"].lower() == nome_receita.lower():
             return i
     return {"erro": "Receita não encontrada"}
+
+
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List
+
+app = FastAPI()
+
+class Receita(BaseModel):
+    nome: str
+    ingredientes: List[str]
+    modo_de_preparado: str
+
+receitas: List[Receita] = []
+
+@app.get("/receitas", response_model=List[Receita])
+def get_todas_receitas():
+    return receitas
+
+@app.post("/receitas", response_model=Receita, status_code=201)
+def create_receita(dados: Receita):
+    receitas.append(dados)
+    return dados
+
+
+
+
+    class ReceitaSemID(BaseModel):
+    nome: str
+    ingredientes: List[str]
+    modo_de_preparado: str
+
+
+class Receita(ReceitaSemID):
+    id: int
+
+receitas: List[Receita] = []
+
