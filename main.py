@@ -99,16 +99,22 @@ def get_receita(nome_receita: str):
 
 
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 
 app = FastAPI()
 
-class Receita(BaseModel):
+class CreateReceita(BaseModel):
     nome: str
     ingredientes: List[str]
-    modo_de_preparado: str
+    modo_de_preparo: str
+
+class Receita(BaseModel):
+    id: int
+    nome: str
+    ingredientes: List[str]
+    modo_de_preparo: str
 
 receitas: List[Receita] = []
 
@@ -116,19 +122,34 @@ receitas: List[Receita] = []
 def get_todas_receitas():
     return receitas
 
+@app.get("/receitas/id/{id}", response_model=Receita)
+def get_receita_por_id(id: int):
+    for receita in receitas:
+        if receita.id == id:
+            return receita
+    raise HTTPException(status_code=404, detail="Receita não encontrada")
+
 @app.post("/receitas", response_model=Receita, status_code=201)
-def create_receita(dados: Receita):
-    receitas.append(dados)
-    return dados
+def create_receita(nova_receita: CreateReceita):
+    for receita in receitas:
+        if receita.nome.lower() == nova_receita.nome.lower():
+            raise HTTPException(status_code=400, detail="Já existe uma receita com esse nome.")
+    novo_id = receitas[-1].id + 1 if receitas else 1
+    receita_criada = Receita(id=novo_id, **nova_receita.dict())
+    receitas.append(receita_criada)
+    return receita_criada
 
-    class ReceitaSemID(BaseModel):
-    nome: str
-    ingredientes: List[str]
-    modo_de_preparado: str
+@app.put("/receitas/{id}")
+def update_receita(id: int, dados: CreateReceita):
+    for i in range(len(receitas)):
+        if receitas[i].id == id:
+            receita_atualizada = Receita(
+                id=id,
+                nome=dados.nome,
+                ingredientes=dados.ingredientes,
+                modo_de_preparo=dados.modo_de_preparo,
+            )
+            receitas[i] = receita_atualizada
+            return receita_atualizada
 
-
-class Receita(ReceitaSemID):
-    id: int
-
-receitas: List[Receita] = []
-
+    return {"mensagem": "Receita não encontrada"}
