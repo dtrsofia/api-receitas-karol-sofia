@@ -138,3 +138,28 @@ def create_receita(nova_receita: CreateReceita):
     receita_criada = Receita(id=novo_id, **nova_receita.dict())
     receitas.append(receita_criada)
     return receita_criada
+
+
+@app.put("/receitas/{id}")
+def uptade_receita(id: int, dados: CreateReceita):
+
+    for i in range(len(receitas)):
+
+@app.put("/receitas/{id}")
+def update _receita(id: int, dados: CreateReceita):
+    for i in range(len(receitas)):
+
+        if receitas[i].id == id:
+            receita_atualizada = Receita(
+              id=id,
+              nome=dados.nome,
+              ingredientes=dados.ingredientes,
+              modo_de_preparo=dados.modo_de_preparo,
+            )
+
+           receitas[i] = (receita_atualizada)
+           return receita_atualizada
+
+    return {"mensagem": "Receita não encontrada"}
+
+
