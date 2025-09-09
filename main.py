@@ -121,9 +121,6 @@ def create_receita(dados: Receita):
     receitas.append(dados)
     return dados
 
-
-
-
     class ReceitaSemID(BaseModel):
     nome: str
     ingredientes: List[str]
