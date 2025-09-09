@@ -141,6 +141,13 @@ def create_receita(nova_receita: CreateReceita):
 
 @app.put("/receitas/{id}")
 def update_receita(id: int, dados: CreateReceita):
+    if dados.nome == "" or len(dados.ingredientes) == 0 or dados.modo_de_preparo == "":
+        return {"mensagem": "Nenhum campo pode ficar vazio."}
+
+    for receita in receitas:
+        if receita.nome == dados.nome and receita.id != id:
+            return {"mensagem": "Já existe uma receita com esse nome."}
+
     for i in range(len(receitas)):
         if receitas[i].id == id:
             receita_atualizada = Receita(
@@ -152,4 +159,4 @@ def update_receita(id: int, dados: CreateReceita):
             receitas[i] = receita_atualizada
             return receita_atualizada
 
-    return {"mensagem": "Receita não encontrada"}
+    return {"mensagem": "Receita não encontrada."}
