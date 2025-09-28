@@ -126,6 +126,13 @@ def create_receita(nova_receita: CreateReceita):
 
 @app.put("/receitas/{id}")
 def update_receita(id: int, dados: CreateReceita):
+    if dados.nome.strip() == "":
+        raise HTTPException(status_code=400, detail="O nome da receita não pode ser vazio.")
+
+    for receita in receitas:
+        if receita.id != id and receita.nome.lower() == dados.nome.lower():
+            raise HTTPException(status_code=400, detail="Já existe uma receita com esse nome.")
+
     for i in range(len(receitas)):
         if receitas[i].id == id:
             receita_atualizada = Receita(
@@ -136,4 +143,16 @@ def update_receita(id: int, dados: CreateReceita):
             )
             receitas[i] = receita_atualizada
             return receita_atualizada
+
     return {"mensagem": "Receita não encontrada"}
+
+@app.delete("/receitas/{id}")
+def deletar_receita(id: int):
+    for i, receita in enumerate(receitas):
+        if receita.id == id:
+            receita_deletada = receitas.pop(i)
+            return {
+                "mensagem": "Receita deletada com sucesso.",
+                "receita": receita_deletada
+            }
+    raise HTTPException(status_code=404, detail="Receita não encontrada")
