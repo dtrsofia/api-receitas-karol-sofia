@@ -1,11 +1,10 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List
+from fastapi import FastAPI 
 
-app = FastAPI(title="Livro de Receitas")
+app = FastAPI(title="livro de receitas")
+
 
 '''
-receitas_anteriores = [
+   receitas = [
     {
         'nome': 'brownie',
         'ingredientes': [
@@ -19,6 +18,7 @@ receitas_anteriores = [
         'utensílios': ['tigela', 'colher', 'forma', 'forno'],
         'modo de preparo': 'Misture ovos e açúcar. Acrescente manteiga, chocolate, farinha e sal. Despeje na forma untada e asse a 180°C por ~25–30 min.'
     },
+
     {
         'nome': 'omelete',
         'ingredientes': [
@@ -30,7 +30,8 @@ receitas_anteriores = [
         'utensílios': ['tigela', 'colher', 'frigideira', '1 fio de azeite/óleo/manteiga/margarina'],
         'modo de preparo': 'Misture os ingredientes na tigela e leve para a frigideira, virando os lados para dourar bem.'
     },
-    {
+
+     {
         'nome': 'batata frita',
         'ingredientes': [
             'Batatas Inglesas',
@@ -40,7 +41,8 @@ receitas_anteriores = [
         'utensílios': ['faca', 'panela'],
         'modo de preparo': 'Descasque e corte as batatas em formato de palitos. Esquente o óleo na panela e frite as batatas por imersão. Retire e adicione sal a gosto.'
     },
-    {
+
+      {
         'nome': 'Brigadeiro',
         'ingredientes': [
             '1 Caixa de Leite Condensado',
@@ -48,8 +50,9 @@ receitas_anteriores = [
             '3 Colheres de Achocolatado',
         ],
         'utensílios': ['colher', 'panela'],
-        'modo de preparo': 'Adicione os ingredientes em uma panela e leve ao fogo até que se torne uma mistura homogênea. Para uma consistência perfeita espere o brigadeiro desgrudar do fundo da panela.'
+        'modo de preparo': 'Adicione os ingrendientes em uma panela e leve ao fogo até que se torne uma mistura homogênea. Para uma consistência perfeita espere o brigadeiro desgrudar do fundo da panela.'
     },
+
     {
         'nome': 'Molho Branco',
         'ingredientes': [
@@ -63,21 +66,44 @@ receitas_anteriores = [
         'utensílios': ['colher de pau', 'panela', 'faca', 'tábua de corte'],
         'modo de preparo': 'Ferva o leite. Derreta a manteiga, junte a farinha e mexa bem até obter uma pasta homogênea. Aos poucos, acrescente o leite e bata, constantemente, para não empelotar. Deixe cozinhar por alguns minutos e tempere com sal, noz-moscada e pimenta.'
     },
+
     {
         'nome': 'Salada de Frutas',
         'ingredientes': [
             '3 Bananas',
-            '3 Maças',
+            '3 Maças'
             '3 Goiabas',
-            '1 Mamão',
-            '1 Caixa de Leite Condensado',
+            '1 Mamão'
+            '1 Caixa de Leite Condensado'
             '1/2 Caixa de Creme de Leite'
         ],
         'utensílios': ['vasilha', 'faca', 'colher'],
-        'modo de preparo': 'Descasque e corte todas as frutas. Coloque dentro de um recipiente juntamente com o leite condensado e o creme de leite.'
+        'modo de preparo': 'Descasque e corte todas as frutas. Coloque dentro de um recipiciente juntamente com o leite condensado e o creme de leite.'
     },
+
+
 ]
+
 '''
+
+@app.get("/")
+def hello():
+    return {"title": "Livro de Receitas"}
+
+@app.get("/receitas/{nome_receita}")
+def get_receita(nome_receita: str):
+    for i in receitas:
+        if i["nome"].lower() == nome_receita.lower():
+            return i
+    return {"erro": "Receita não encontrada"}
+
+
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
+
+app = FastAPI()
 
 class CreateReceita(BaseModel):
     nome: str
@@ -91,17 +117,6 @@ class Receita(BaseModel):
     modo_de_preparo: str
 
 receitas: List[Receita] = []
-
-@app.get("/")
-def hello():
-    return {"title": "Livro de Receitas"}
-
-@app.get("/receitas/{nome_receita}")
-def get_receita(nome_receita: str):
-    for i in receitas:
-        if i.nome.lower() == nome_receita.lower():
-            return i
-    return {"erro": "Receita não encontrada"}
 
 @app.get("/receitas", response_model=List[Receita])
 def get_todas_receitas():
@@ -126,12 +141,12 @@ def create_receita(nova_receita: CreateReceita):
 
 @app.put("/receitas/{id}")
 def update_receita(id: int, dados: CreateReceita):
-    if dados.nome.strip() == "":
-        raise HTTPException(status_code=400, detail="O nome da receita não pode ser vazio.")
+    if dados.nome == "" or len(dados.ingredientes) == 0 or dados.modo_de_preparo == "":
+        return {"mensagem": "Nenhum campo pode ficar vazio."}
 
     for receita in receitas:
-        if receita.id != id and receita.nome.lower() == dados.nome.lower():
-            raise HTTPException(status_code=400, detail="Já existe uma receita com esse nome.")
+        if receita.nome == dados.nome and receita.id != id:
+            return {"mensagem": "Já existe uma receita com esse nome."}
 
     for i in range(len(receitas)):
         if receitas[i].id == id:
@@ -144,15 +159,24 @@ def update_receita(id: int, dados: CreateReceita):
             receitas[i] = receita_atualizada
             return receita_atualizada
 
-    return {"mensagem": "Receita não encontrada"}
+    return {"mensagem": "Receita não encontrada."}
 
 @app.delete("/receitas/{id}")
 def deletar_receita(id: int):
-    for i, receita in enumerate(receitas):
-        if receita.id == id:
+    if not receitas:
+        return {"mensagem": "Não há receitas para excluir."}
+
+    for i in range(len(receitas)):
+        if receitas[i].id == id:
             receita_deletada = receitas.pop(i)
             return {
                 "mensagem": "Receita deletada com sucesso.",
-                "receita": receita_deletada
+                "receita": {
+                    "id": receita_deletada.id,
+                    "nome": receita_deletada.nome,
+                    "descricao": receita_deletada.descricao
+                }
             }
-    raise HTTPException(status_code=404, detail="Receita não encontrada")
+
+    return {"mensagem": "Receita não encontrada."}
+
