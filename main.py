@@ -24,6 +24,8 @@ class Receita(BaseModel):
     {"nome": "Salada de Frutas", "ingredientes": ["3 Bananas","3 Maçãs","3 Goiabas","1 Mamão","1 Caixa de Leite Condensado","1/2 Caixa de Creme de Leite"], "modo_de_preparo": "Descasque e corte todas as frutas. Coloque dentro de um recipiente juntamente com o leite condensado e o creme de leite."}
 ]'''
 
+proxima_id = 1
+
 @app.get("/receitas", response_model=List[dict])
 def get_todas_receitas():
     return receitas
