@@ -94,20 +94,29 @@ def get_receita_por_id(id: int):
     for receita in receitas:
         if receita.id == id:
             return receita
-    raise HTTPException(status_code=404, detail="Receita não encontrada")
+    return {"erro": "Receita não encontrada"}
 
 @app.get("/receitas/{nome_receita}", response_model=Receita)
 def get_receita_por_nome(nome_receita: str):
     for receita in receitas:
-        if receita.nome.lower() == nome_receita.lower():
+        if receita.nome.lower() == nome_receita.lower():  # desafio extra: ignorar maiúsculas/minúsculas
             return receita
-    raise HTTPException(status_code=404, detail="Receita não encontrada")
+    return {"erro": "Receita não encontrada"}
 
 @app.post("/receitas", response_model=Receita, status_code=201)
 def create_receita(nova_receita: CreateReceita):
+    # desafio extra: validar tamanho do nome da receita
+    if len(nova_receita.nome) < 2 or len(nova_receita.nome) > 50:
+        return {"erro": "O nome da receita deve ter entre 2 e 50 caracteres."}
+    
+    # desafio extra: validar quantidade de ingredientes
+    if len(nova_receita.ingredientes) < 1 or len(nova_receita.ingredientes) > 20:
+        return {"erro": "A receita deve ter entre 1 e 20 ingredientes."}
+
     for receita in receitas:
-        if receita.nome.lower() == nova_receita.nome.lower():
-            raise HTTPException(status_code=400, detail="Já existe uma receita com esse nome.")
+        if receita.nome.lower() == nova_receita.nome.lower():  # desafio extra: ignorar maiúsculas/minúsculas
+            return {"erro": "Já existe uma receita com esse nome."}
+    
     novo_id = receitas[-1].id + 1 if receitas else 1
     receita_criada = Receita(id=novo_id, **nova_receita.dict())
     receitas.append(receita_criada)
@@ -115,28 +124,39 @@ def create_receita(nova_receita: CreateReceita):
 
 @app.put("/receitas/{id}", response_model=Receita)
 def update_receita(id: int, dados: CreateReceita):
+    # desafio extra: validar nome e ingredientes
+    if len(dados.nome) < 2 or len(dados.nome) > 50:
+        return {"erro": "O nome da receita deve ter entre 2 e 50 caracteres."}
+    if len(dados.ingredientes) < 1 or len(dados.ingredientes) > 20:
+        return {"erro": "A receita deve ter entre 1 e 20 ingredientes."}
     if not dados.nome or not dados.ingredientes or not dados.modo_de_preparo:
-        raise HTTPException(status_code=400, detail="Nenhum campo pode ficar vazio.")
+        return {"erro": "Nenhum campo pode ficar vazio."}
     
     for receita in receitas:
-        if receita.nome.lower() == dados.nome.lower() and receita.id != id:
-            raise HTTPException(status_code=400, detail="Já existe uma receita com esse nome.")
+        if receita.nome.lower() == dados.nome.lower() and receita.id != id:  # desafio extra: ignorar maiúsculas/minúsculas
+            return {"erro": "Já existe uma receita com esse nome."}
 
-    for i, receita in enumerate(receitas):
-        if receita.id == id:
+    # atualizar receita 
+    achou = False
+    for i in range(len(receitas)):
+        if receitas[i].id == id:
             receita_atualizada = Receita(id=id, **dados.dict())
             receitas[i] = receita_atualizada
+            achou = True
             return receita_atualizada
 
-    raise HTTPException(status_code=404, detail="Receita não encontrada.")
+    if not achou:
+        return {"erro": "Receita não encontrada."}
 
 @app.delete("/receitas/{id}")
 def deletar_receita(id: int):
-    for i, receita in enumerate(receitas):
-        if receita.id == id:
-            receita_deletada = receitas.pop(i)
+    # deletar receita 
+    for i in range(len(receitas)):
+        if receitas[i].id == id:
+            receita_deletada = receitas[i]
+            receitas = receitas[:i] + receitas[i+1:]
             return {
                 "mensagem": "Receita deletada com sucesso.",
                 "receita": receita_deletada.dict()
             }
-    raise HTTPException(status_code=404, detail="Receita não encontrada.")
+    return {"erro": "Receita não encontrada."}
