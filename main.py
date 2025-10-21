@@ -1,4 +1,7 @@
+from http import HTTPStatus
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
 from .schema import CreateReceita, Receita
 
 app = FastAPI(title="Livro de Receitas")
@@ -85,7 +88,7 @@ receitas: List[Receita] = []
 def hello():
     return {"title": "Livro de Receitas"}
 
-@app.get("/receitas", response_model=List[Receita])
+@app.get("/receitas", response_model=List[Receita], status_code=HTTPStatus.OK)
 def get_todas_receitas():
     return receitas
 
@@ -103,7 +106,7 @@ def get_receita_por_nome(nome_receita: str):
             return receita
     return {"erro": "Receita não encontrada"}
 
-@app.post("/receitas", response_model=Receita, status_code=201)
+@app.post("/receitas", response_model=Receita, status_code=HTTPStatus.CREAETED)
 def create_receita(nova_receita: CreateReceita):
     # desafio extra: validar tamanho do nome da receita
     if len(nova_receita.nome) < 2 or len(nova_receita.nome) > 50:
@@ -122,7 +125,7 @@ def create_receita(nova_receita: CreateReceita):
     receitas.append(receita_criada)
     return receita_criada
 
-@app.put("/receitas/{id}", response_model=Receita)
+@app.put("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
 def update_receita(id: int, dados: CreateReceita):
     # desafio extra: validar nome e ingredientes
     if len(dados.nome) < 2 or len(dados.nome) > 50:
@@ -148,7 +151,7 @@ def update_receita(id: int, dados: CreateReceita):
     if not achou:
         return {"erro": "Receita não encontrada."}
 
-@app.delete("/receitas/{id}")
+@app.delete("/receitas/{id}", response_model=Receita, status_code=HTTPStatus.OK)
 def deletar_receita(id: int):
     # deletar receita 
     for i in range(len(receitas)):
