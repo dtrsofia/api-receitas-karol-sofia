@@ -2,7 +2,11 @@ from http import HTTPStatus
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
-from schema import CreateReceita, Receita
+from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic
+
+usuarios: List[Usuario] = []
+
+receitas: List[Receita] = []
 
 app = FastAPI(title="Livro de Receitas")
 
@@ -159,3 +163,8 @@ def delete_receita(id: int):
             }
     
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
+
+
+@app.post("/usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
+def create_usuario(dados:BaseUsuario):
+    
