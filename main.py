@@ -167,4 +167,119 @@ def delete_receita(id: int):
 
 @app.post("/usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
 def create_usuario(dados:BaseUsuario):
+ 
+    if len(dados.nome) < 2 or len(dados.nome) > 50:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="O nome do usuário deve ter entre 2 e 50 caracteres.")
     
+    if len(dados.email) < 5:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="O e-mail deve ter no mínimo 5 caracteres.")
+
+    if len(dados.senha) < 6:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="A senha deve ter no mínimo 6 caracteres.")
+
+    # email duplicado 
+    for usuario in usuarios:
+        if usuario.email.lower() == dados.email.lower():
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT,
+                detail="Já existe um usuário com esse e-mail."
+            )
+
+    novo_id = usuarios[-1].id + 1 if usuarios else 1
+    usuario_criado = Usuario(id=novo_id, **dados.dict())
+    usuarios.append(usuario_criado)
+    return usuario_criado
+def valida_senha(senha: str):
+    tem_letra = False
+    tem_numero = False
+
+    for caractere in senha:
+        if caractere.isalpha():
+            tem_letra = True
+        if caractere.isdigit():
+            tem_numero = True
+
+    if not tem_letra or not tem_numero:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="A senha deve conter pelo menos uma letra e um número."
+        )
+
+
+@app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
+def get_todos_usuarios():
+    return usuarios
+
+
+@app.get("/usuarios/{nome_usuario}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
+def get_usuario_por_nome(nome_usuario: str):
+    for usuario in usuarios:
+        if usuario.nome.lower() == nome_usuario.lower():
+            return usuario
+    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+
+
+@app.get("/usuarios/id/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
+def get_usuario_por_id(id: int):
+    for usuario in usuarios:
+        if usuario.id == id:
+            return usuario
+    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+
+
+@app.put("/usuarios/id/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
+def update_usuario(id: int, dados: BaseUsuario):
+    if len(dados.nome) < 2 or len(dados.nome) > 50:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="O nome do usuário deve ter entre 2 e 50 caracteres."
+        )
+
+    if len(dados.email) < 5:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="O e-mail deve ter no mínimo 5 caracteres."
+        )
+
+    if len(dados.senha) < 6:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="A senha deve ter no mínimo 6 caracteres."
+        )
+
+    # senha precisa ter letra e número
+    valida_senha(dados.senha)
+
+    for usuario in usuarios:
+        if usuario.email.lower() == dados.email.lower() and usuario.id != id:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT,
+                detail="Já existe um usuário com esse e-mail."
+            )
+
+    achou = False
+    for i in range(len(usuarios)):
+        if usuarios[i].id == id:
+            usuario_atualizado = Usuario(id=id, **dados.dict())
+            usuarios[i] = usuario_atualizado
+            achou = True
+            return usuario_atualizado
+
+    if not achou:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="Usuário não encontrado."
+        )
+
+
+@app.delete("/usuarios/id/{id}", status_code=HTTPStatus.OK)
+def delete_usuario(id: int):
+    for i in range(len(usuarios)):
+        if usuarios[i].id == id:
+            usuario_deletado = usuarios.pop(i)
+            return {
+                "mensagem": "Usuário deletado com sucesso.",
+                "usuario": usuario_deletado.dict()
+            }
+
+    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
