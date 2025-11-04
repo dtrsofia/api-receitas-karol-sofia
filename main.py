@@ -168,7 +168,7 @@ def delete_receita(id: int):
 @app.post("/usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
 def create_usuario(dados:BaseUsuario):
  
-    if len(dados.nome) < 2 or len(dados.nome) > 50:
+    if len(dados.nome_usuario) < 2 or len(dados.nome_usuario) > 50:
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="O nome do usuário deve ter entre 2 e 50 caracteres.")
     
     if len(dados.email) < 5:
