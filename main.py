@@ -169,7 +169,7 @@ def delete_receita(id: int):
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Receita não encontrada")
 
 
-@app.post("/usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
+'''@app.post("/usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
 def create_usuario(dados:BaseUsuario):
  
     if len(dados.nome_usuario) < 2 or len(dados.nome_usuario) > 50:
@@ -207,7 +207,9 @@ def valida_senha(senha: str):
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail="A senha deve conter pelo menos uma letra e um número."
-        )
+        )'''
+
+@app
 
 
 @app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
