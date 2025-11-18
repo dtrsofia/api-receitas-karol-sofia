@@ -1,8 +1,12 @@
 from http import HTTPStatus
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List
 from schema import CreateReceita, Receita, Usuario, BaseUsuario, UsuarioPublic
+from models import User
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from database import get_session
 
 usuarios: List[Usuario] = []
 
