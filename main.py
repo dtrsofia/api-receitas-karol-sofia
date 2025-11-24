@@ -209,37 +209,81 @@ def valida_senha(senha: str):
             detail="A senha deve conter pelo menos uma letra e um número."
         )'''
 
-@app
+@app.post(/"usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
+def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
+    db_user = session.scalar(
+        select(User).where(
+            (User.nome_usuario == dados.nome_usuario) | (User.email == dados.email)
+        )
+    )
 
+    if db_user: 
+        if db_user.nome_usuario == dados.nome_usuario:
+            raise HTTPException(
+                status_code=HTTPStatus.CONFLICT,
+                detail='Email já existe',
+            )
+    elif db_user.email == dados.email:
+        raise HTTPException(
+            status_code=HTTPException.CONFLICT,
+            detail = 'Email já existe'
+        )
+
+db_user = User(
+    nome_usuario=dados.nome_usuario, senha=dados.senha, email=dados.email
+)
+session.add(db_user)
+session.commit()
+session.refresh(db_user)
+
+return db_user
 
 @app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
-def get_todos_usuarios():
-    return usuarios
+def get_todos_usuarios(
+    skip: int = 0, limit: int = 100, session: Session = Depends(get_session)
+):
+    users = session.scalars(select(User).offset(skip).limit(limit)).all()
+
+    return users
 
 
 @app.get("/usuarios/{nome_usuario}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
-def get_usuario_por_nome(nome_usuario: str):
-    for usuario in usuarios:
-        if usuario.nome.lower() == nome_usuario.lower():
-            return usuario
+def get_usuario_por_nome(nome_usuario: str, session: Session = Depends(get_sesssion)):
+    db_user = session.scalar(
+         select(User).where((User.nome_usuario == nome_usuario))
+    )
+    if db_user:
+        return db_user
+
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
 
 
 @app.get("/usuarios/id/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
-def get_usuario_por_id(id: int):
-    for usuario in usuarios:
-        if usuario.id == id:
-            return usuario
+def get_usuario_por_id(id: int, session:Session = Depends(get_session)):
+    db_user = session.scalar(
+        select(User).where((User.id == id))
+    )
+    if db_user:
+        return db_user
+
     raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
 
 
-@app.put("/usuarios/id/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
-def update_usuario(id: int, dados: BaseUsuario):
-    if len(dados.nome) < 2 or len(dados.nome) > 50:
+@app.put("/usuarios/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
+def update_usuario(id: int, dados: BaseUsuario, session: Session = Depends(get_session)):
+
+    db_user = session.scalar(select(User).where(User.id == id))
+    if not db_user:
         raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail="O nome do usuário deve ter entre 2 e 50 caracteres."
+            status_code=HTTPStatus.NOT.FOUND, detail="Usuário não encontrado"
         )
+
+    db_user.nome_usuario = dados.nome_usuario
+    db_user.senha = dados.senha
+    db_user.email = dados.email
+    session.commit()
+    session.refresh(db_user)
+    return db_user
 
     if len(dados.email) < 5:
         raise HTTPException(
