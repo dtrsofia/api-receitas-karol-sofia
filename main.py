@@ -8,7 +8,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from database import get_session
 
-usuarios: List[Usuario] = []
 
 receitas: List[Receita] = []
 
@@ -322,14 +321,16 @@ def update_usuario(id: int, dados: BaseUsuario, session: Session = Depends(get_s
         )
 
 
-@app.delete("/usuarios/id/{id}", status_code=HTTPStatus.OK)
-def delete_usuario(id: int):
-    for i in range(len(usuarios)):
-        if usuarios[i].id == id:
-            usuario_deletado = usuarios.pop(i)
-            return {
-                "mensagem": "Usuário deletado com sucesso.",
-                "usuario": usuario_deletado.dict()
-            }
+@app.delete("/usuarios/id/{id}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
+def delete_usuario(id: int, session: Session = Depends(get_session)):
+    db_user = session.scalar(select(User).where(User.id == id))
 
-    raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+    if not db_user:
+        raise HTTPException(
+             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+        )
+
+    session.delete(db_user)
+    session.commit()
+
+    return db_user
