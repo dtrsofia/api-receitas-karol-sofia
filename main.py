@@ -208,13 +208,14 @@ def valida_senha(senha: str):
             detail="A senha deve conter pelo menos uma letra e um número."
         )'''
 
-@app.post(/"usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
+@app.post("/usuarios", status_code=HTTPStatus.CREATED, response_model=UsuarioPublic)
 def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
     db_user = session.scalar(
         select(User).where(
             (User.nome_usuario == dados.nome_usuario) | (User.email == dados.email)
         )
     )
+    print("usuario", db_user)
 
     if db_user: 
         if db_user.nome_usuario == dados.nome_usuario:
@@ -222,20 +223,20 @@ def create_usuario(dados: BaseUsuario, session: Session = Depends(get_session)):
                 status_code=HTTPStatus.CONFLICT,
                 detail='Email já existe',
             )
-    elif db_user.email == dados.email:
-        raise HTTPException(
-            status_code=HTTPException.CONFLICT,
-            detail = 'Email já existe'
-        )
+        elif db_user.email == dados.email:
+            raise HTTPException(
+                status_code=HTTPException.CONFLICT,
+                detail = 'Email já existe'
+            )
 
-db_user = User(
-    nome_usuario=dados.nome_usuario, senha=dados.senha, email=dados.email
-)
-session.add(db_user)
-session.commit()
-session.refresh(db_user)
+    db_user = User(
+        nome_usuario=dados.nome_usuario, senha=dados.senha, email=dados.email
+    )
+    session.add(db_user)
+    session.commit()
+    session.refresh(db_user)
 
-return db_user
+    return db_user
 
 @app.get("/usuarios", status_code=HTTPStatus.OK, response_model=List[UsuarioPublic])
 def get_todos_usuarios(
@@ -247,7 +248,7 @@ def get_todos_usuarios(
 
 
 @app.get("/usuarios/{nome_usuario}", response_model=UsuarioPublic, status_code=HTTPStatus.OK)
-def get_usuario_por_nome(nome_usuario: str, session: Session = Depends(get_sesssion)):
+def get_usuario_por_nome(nome_usuario: str, session: Session = Depends(get_session)):
     db_user = session.scalar(
          select(User).where((User.nome_usuario == nome_usuario))
     )
@@ -326,9 +327,8 @@ def delete_usuario(id: int, session: Session = Depends(get_session)):
     db_user = session.scalar(select(User).where(User.id == id))
 
     if not db_user:
-        raise HTTPException(
-             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
-        )
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Usuário não encontrado")
+       
 
     session.delete(db_user)
     session.commit()
